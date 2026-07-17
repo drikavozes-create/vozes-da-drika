@@ -21,6 +21,53 @@ APP_NAME = "Vozes da Drika"
 OUTPUT_DIR = Path("storage") / "vozes_da_drika"
 PREVIEW_DIR = OUTPUT_DIR / "previews"
 
+DRIKA_TOP_IMAGE = Path(__file__).resolve().parent / "assets" / "drika_topo.png"
+
+
+def find_top_image() -> Path | None:
+    if DRIKA_TOP_IMAGE.exists():
+        return DRIKA_TOP_IMAGE
+    return None
+
+ASSETS_DIR = Path(__file__).resolve().parent / "assets"
+TOP_IMAGE_PREFERRED_NAMES = [
+    "drika_topo.png",
+    "drika_topo.jpg",
+    "drika_topo.jpeg",
+    "drika_topo.webp",
+    "topo.png",
+    "topo.jpg",
+    "topo.jpeg",
+    "topo.webp",
+    "logo.png",
+    "logo.jpg",
+    "logo.jpeg",
+    "logo.webp",
+    "banner.png",
+    "banner.jpg",
+    "banner.jpeg",
+    "banner.webp",
+]
+
+
+def find_top_image() -> Path | None:
+    if not ASSETS_DIR.exists():
+        return None
+
+    for file_name in TOP_IMAGE_PREFERRED_NAMES:
+        candidate = ASSETS_DIR / file_name
+        if candidate.exists():
+            return candidate
+
+    image_files: list[Path] = []
+    for pattern in ("*.png", "*.jpg", "*.jpeg", "*.webp", "*.gif"):
+        image_files.extend(ASSETS_DIR.rglob(pattern))
+
+    if not image_files:
+        return None
+
+    return sorted(image_files, key=lambda item: item.name.lower())[0]
+
 
 def get_secret_value(name: str, default: str = "") -> str:
     try:
@@ -45,6 +92,8 @@ def require_password() -> bool:
 
     if st.session_state.get("drika_authenticated") is True:
         return True
+
+    render_top_image()
 
     st.markdown(
         """
@@ -130,6 +179,16 @@ def sorted_labels(values: list[str]) -> list[str]:
     return sorted(values, key=lambda value: value.lower())
 
 
+
+def render_top_image() -> None:
+    top_image = find_top_image()
+    if not top_image:
+        return
+
+    left, center, right = st.columns([1, 2, 1])
+    with center:
+        st.image(str(top_image), width=230)
+
 st.set_page_config(
     page_title=APP_NAME,
     page_icon="🎙️",
@@ -171,6 +230,23 @@ st.markdown(
         max-width: 860px;
         padding-top: 2.2rem;
         padding-bottom: 4rem;
+    }
+
+
+    .drika-logo-wrap {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 0.2rem 0 1.15rem 0;
+    }
+
+    .drika-logo-wrap img {
+        max-width: 260px;
+        width: 52%;
+        min-width: 150px;
+        height: auto;
+        border-radius: 24px;
+        box-shadow: 0 16px 36px rgba(157, 23, 77, 0.10);
     }
 
     .drika-hero {
@@ -368,6 +444,9 @@ if not require_password():
     st.stop()
 
 fish_api_key = get_secret_value("FISH_AUDIO_API_KEY", "")
+
+
+render_top_image()
 
 st.markdown(
     """
